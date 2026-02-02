@@ -1,393 +1,242 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gulp! Evolution</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: #001a33;
-        font-family: "Segoe UI", sans-serif;
-      }
-      canvas {
-        display: block;
-        touch-action: none;
-      }
+        body { margin: 0; padding: 0; overflow: hidden; background: #001a33; font-family: 'Segoe UI', sans-serif; }
+        canvas { display: block; cursor: crosshair; touch-action: none; }
+        
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
+        .stats { font-size: 24px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        
+        #menu, #game-over {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; background: rgba(0,26,51,0.8);
+            color: white; z-index: 100; transition: 0.5s;
+        }
 
-      #ui {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        color: white;
-        pointer-events: none;
-        z-index: 10;
-      }
-      .stats {
-        font-size: 24px;
-        font-weight: bold;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-      }
-
-      #menu,
-      #game-over {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background: rgba(0, 26, 51, 0.8);
-        color: white;
-        z-index: 100;
-      }
-
-      h1 {
-        font-size: 80px;
-        margin: 0;
-        color: #00d2ff;
-        text-shadow: 0 0 20px #00d2ff;
-        letter-spacing: 5px;
-      }
-      .btn {
-        padding: 15px 40px;
-        font-size: 24px;
-        background: #00d2ff;
-        color: #001a33;
-        border: none;
-        border-radius: 50px;
-        cursor: pointer;
-        font-weight: bold;
-        margin-top: 20px;
-        transition: 0.3s;
-        box-shadow: 0 0 15px #00d2ff;
-      }
-
-      #exp-container {
-        width: 250px;
-        height: 10px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 5px;
-        margin-top: 5px;
-      }
-      #exp-bar {
-        width: 0%;
-        height: 100%;
-        background: #00d2ff;
-        border-radius: 5px;
-        transition: 0.3s;
-      }
-
-      /* Style untuk Joystick */
-      #joystick-base {
-        position: absolute;
-        bottom: 50px;
-        left: 50px;
-        width: 100px;
-        height: 100px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        display: none;
-        z-index: 50;
-      }
-      #joystick-stick {
-        position: absolute;
-        top: 25px;
-        left: 25px;
-        width: 50px;
-        height: 50px;
-        background: rgba(0, 210, 255, 0.5);
-        border-radius: 50%;
-      }
+        h1 { font-size: 80px; margin: 0; color: #00d2ff; text-shadow: 0 0 20px #00d2ff; letter-spacing: 5px; }
+        .btn {
+            padding: 15px 40px; font-size: 24px; background: #00d2ff; color: #001a33;
+            border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
+            margin-top: 20px; transition: 0.3s; box-shadow: 0 0 15px #00d2ff;
+        }
+        .btn:hover { transform: scale(1.1); box-shadow: 0 0 30px #00d2ff; }
+        
+        #exp-container { width: 250px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; margin-top: 5px; }
+        #exp-bar { width: 0%; height: 100%; background: #00d2ff; border-radius: 5px; transition: 0.3s; }
     </style>
-  </head>
-  <body>
-    <div id="ui">
-      <div class="stats">SCORE: <span id="score">0</span></div>
-      <div class="stats" style="font-size: 16px">
-        EVOLUTION LEVEL: <span id="lvl">1</span>
-      </div>
-      <div id="exp-container"><div id="exp-bar"></div></div>
-    </div>
+</head>
+<body>
 
-    <div id="joystick-base">
-      <div id="joystick-stick"></div>
+    <div id="ui">
+        <div class="stats">SCORE: <span id="score">0</span></div>
+        <div class="stats" style="font-size: 16px;">EVOLUTION LEVEL: <span id="lvl">1</span></div>
+        <div id="exp-container"><div id="exp-bar"></div></div>
     </div>
 
     <div id="menu">
-      <h1>GULP!</h1>
-      <p>Gunakan mouse atau Joystick di layar untuk bergerak!</p>
-      <button class="btn" onclick="startGame()">START ADVENTURE</button>
+        <h1>Gulp! Evolution</h1>
+        <p>Makan ikan yang lebih kecil untuk tumbuh besar!</p>
+        <button class="btn" onclick="startGame()">START ADVENTURE</button>
     </div>
 
-    <div id="game-over" style="display: none">
-      <h1 style="color: #ff4d4d; text-shadow: 0 0 20px #ff4d4d">GAME OVER</h1>
-      <p id="final-score">Score: 0</p>
-      <button class="btn" onclick="location.reload()">TRY AGAIN</button>
+    <div id="game-over" style="display:none">
+        <h1 style="color: #ff4d4d; text-shadow: 0 0 20px #ff4d4d;">GAME OVER</h1>
+        <p id="final-score">Score: 0</p>
+        <button class="btn" onclick="location.reload()">TRY AGAIN</button>
     </div>
 
     <canvas id="game"></canvas>
 
     <script>
-      const canvas = document.getElementById("game");
-      const ctx = canvas.getContext("2d");
-      const joyBase = document.getElementById("joystick-base");
-      const joyStick = document.getElementById("joystick-stick");
-
-      let width, height, player, enemies, bubbles, score, level, exp, running;
-      let isMobile = "ontouchstart" in window;
-
-      // Joystick Logic Variables
-      let stickActive = false;
-      let joyX = 0,
-        joyY = 0;
-
-      function init() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-        score = 0;
-        level = 1;
-        exp = 0;
-        running = false;
-        enemies = [];
-        bubbles = [];
-
-        player = {
-          x: width / 2,
-          y: height / 2,
-          r: 15,
-          color: "#00d2ff",
-          speed: 0.1,
-          targetX: width / 2,
-          targetY: height / 2,
-          angle: 0,
-          vx: 0,
-          vy: 0, // velocity untuk joystick
-        };
-
-        if (isMobile) joyBase.style.display = "block";
-      }
-
-      // --- INPUT HANDLING ---
-
-      // Mouse Move (PC)
-      window.addEventListener("mousemove", (e) => {
-        if (!stickActive) {
-          player.targetX = e.clientX;
-          player.targetY = e.clientY;
-        }
-      });
-
-      // Touch Logic (Joystick)
-      window.addEventListener("touchstart", (e) => {
-        const touch = e.touches[0];
-        const rect = joyBase.getBoundingClientRect();
-        // Cek apakah menyentuh area joystick
-        let dist = Math.hypot(
-          touch.clientX - (rect.left + 50),
-          touch.clientY - (rect.top + 50),
-        );
-        if (dist < 80) stickActive = true;
-      });
-
-      window.addEventListener("touchmove", (e) => {
-        if (!stickActive) return;
-        const touch = e.touches[0];
-        const rect = joyBase.getBoundingClientRect();
-        const centerX = rect.left + 50;
-        const centerY = rect.top + 50;
-
-        let angle = Math.atan2(
-          touch.clientY - centerY,
-          touch.clientX - centerX,
-        );
-        let dist = Math.min(
-          Math.hypot(touch.clientX - centerX, touch.clientY - centerY),
-          40,
-        );
-
-        joyX = Math.cos(angle) * dist;
-        joyY = Math.sin(angle) * dist;
-
-        joyStick.style.transform = `translate(${joyX}px, ${joyY}px)`;
-
-        // Set velocity berdasarkan tarikan joystick
-        player.vx = (joyX / 40) * 8;
-        player.vy = (joyY / 40) * 8;
-      });
-
-      window.addEventListener("touchend", () => {
-        stickActive = false;
-        joyX = 0;
-        joyY = 0;
-        joyStick.style.transform = `translate(0,0)`;
-        player.vx = 0;
-        player.vy = 0;
-      });
-
-      class Enemy {
-        constructor() {
-          this.r = Math.random() * 25 + level * 2;
-          this.side = Math.random() > 0.5 ? "left" : "right";
-          this.x = this.side === "left" ? -50 : width + 50;
-          this.y = Math.random() * height;
-          this.speed = Math.random() * 2 + 1;
-          this.color = this.r > player.r ? "#ff4d4d" : "#4dff88";
-        }
-        update() {
-          this.x += this.side === "left" ? this.speed : -this.speed;
-        }
-        draw() {
-          ctx.save();
-          ctx.translate(this.x, this.y);
-          if (this.side === "right") ctx.scale(-1, 1);
-          ctx.fillStyle = this.color;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, this.r, this.r / 1.5, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(-this.r, 0);
-          ctx.lineTo(-this.r - 10, -10);
-          ctx.lineTo(-this.r - 10, 10);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = "white";
-          ctx.beginPath();
-          ctx.arc(this.r / 2, -2, 3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-      }
-
-      class Bubble {
-        constructor() {
-          this.x = Math.random() * width;
-          this.y = height + 50;
-          this.r = Math.random() * 5;
-          this.speed = Math.random() * 2 + 1;
-        }
-        update() {
-          this.y -= this.speed;
-        }
-        draw() {
-          ctx.strokeStyle = "rgba(255,255,255,0.3)";
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      }
-
-      function spawn() {
-        if (!running) return;
-        if (Math.random() < 0.05) enemies.push(new Enemy());
-        if (Math.random() < 0.1) bubbles.push(new Bubble());
-        setTimeout(spawn, 100);
-      }
-
-      function drawPlayer() {
-        if (stickActive) {
-          // Pergerakan via Joystick
-          player.x += player.vx;
-          player.y += player.vy;
-          if (player.vx !== 0 || player.vy !== 0) {
-            player.angle = Math.atan2(player.vy, player.vx);
-          }
-        } else {
-          // Pergerakan via Mouse Follow
-          let dx = player.targetX - player.x;
-          let dy = player.targetY - player.y;
-          player.angle = Math.atan2(dy, dx);
-          player.x += dx * player.speed;
-          player.y += dy * player.speed;
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height, player, enemies, bubbles, particles, score, level, exp, running;
+        
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            score = 0; level = 1; exp = 0; running = false;
+            enemies = []; bubbles = []; particles = [];
+            
+            player = {
+                x: width/2, y: height/2, r: 15, 
+                color: '#00d2ff', speed: 0.1,
+                targetX: width/2, targetY: height/2,
+                angle: 0
+            };
         }
 
-        // Batasan Layar
-        player.x = Math.max(player.r, Math.min(width - player.r, player.x));
-        player.y = Math.max(player.r, Math.min(height - player.r, player.y));
-
-        ctx.save();
-        ctx.translate(player.x, player.y);
-        ctx.rotate(player.angle);
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = player.color;
-        ctx.fillStyle = player.color;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, player.r, player.r / 1.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(-player.r, 0);
-        ctx.lineTo(-player.r - 15, -15);
-        ctx.lineTo(-player.r - 15, 15);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        ctx.arc(player.r / 2, -5, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function update() {
-        if (!running) return;
-        ctx.clearRect(0, 0, width, height);
-
-        bubbles.forEach((b, i) => {
-          b.update();
-          b.draw();
-          if (b.y < -50) bubbles.splice(i, 1);
+        // --- INPUT ---
+        window.addEventListener('mousemove', e => {
+            player.targetX = e.clientX;
+            player.targetY = e.clientY;
+        });
+        window.addEventListener('touchmove', e => {
+            player.targetX = e.touches[0].clientX;
+            player.targetY = e.touches[0].clientY;
         });
 
-        enemies.forEach((e, i) => {
-          e.update();
-          e.draw();
-          let dist = Math.hypot(player.x - e.x, player.y - e.y);
-          if (dist < player.r + e.r) {
-            if (player.r >= e.r) {
-              score += Math.floor(e.r);
-              exp += 20;
-              enemies.splice(i, 1);
-              if (exp >= 100) {
-                level++;
-                exp = 0;
-                player.r += 5;
-                player.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-              }
-            } else {
-              gameOver();
+        class Enemy {
+            constructor() {
+                this.r = (Math.random() * 25) + (level * 2);
+                this.side = Math.random() > 0.5 ? 'left' : 'right';
+                this.x = this.side === 'left' ? -50 : width + 50;
+                this.y = Math.random() * height;
+                this.speed = (Math.random() * 2) + 1;
+                this.color = this.r > player.r ? '#ff4d4d' : '#4dff88';
             }
-          }
-          if (e.x < -100 || e.x > width + 100) enemies.splice(i, 1);
-        });
+            update() {
+                this.x += this.side === 'left' ? this.speed : -this.speed;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                if(this.side === 'right') ctx.scale(-1, 1);
+                
+                // Body Ikan
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.r, this.r/1.5, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Ekor
+                ctx.beginPath();
+                ctx.moveTo(-this.r, 0);
+                ctx.lineTo(-this.r - 10, -10);
+                ctx.lineTo(-this.r - 10, 10);
+                ctx.closePath();
+                ctx.fill();
 
-        drawPlayer();
-        document.getElementById("score").innerText = score;
-        document.getElementById("lvl").innerText = level;
-        document.getElementById("exp-bar").style.width = exp + "%";
-        requestAnimationFrame(update);
-      }
+                // Mata
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(this.r/2, -2, 3, 0, Math.PI*2); ctx.fill();
+                
+                ctx.restore();
+            }
+        }
 
-      function startGame() {
-        document.getElementById("menu").style.display = "none";
+        class Bubble {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = height + 50;
+                this.r = Math.random() * 5;
+                this.speed = Math.random() * 2 + 1;
+            }
+            update() { this.y -= this.speed; }
+            draw() {
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.stroke();
+            }
+        }
+
+        function spawn() {
+            if(!running) return;
+            if(Math.random() < 0.05) enemies.push(new Enemy());
+            if(Math.random() < 0.1) bubbles.push(new Bubble());
+            setTimeout(spawn, 100);
+        }
+
+        function drawPlayer() {
+            let dx = player.targetX - player.x;
+            let dy = player.targetY - player.y;
+            player.angle = Math.atan2(dy, dx);
+            player.x += dx * player.speed;
+            player.y += dy * player.speed;
+
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+            
+            // Cahaya Glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = player.color;
+            
+            // Badan Ikan Pemain
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, player.r, player.r/1.5, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Ekor
+            ctx.beginPath();
+            ctx.moveTo(-player.r, 0);
+            ctx.lineTo(-player.r - 15, -15);
+            ctx.lineTo(-player.r - 15, 15);
+            ctx.closePath();
+            ctx.fill();
+
+            // Mata
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(player.r/2, -5, 4, 0, Math.PI*2); ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function update() {
+            if(!running) return;
+            ctx.fillStyle = 'linear-gradient(#001a33, #003366)';
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw Bubbles
+            bubbles.forEach((b, i) => {
+                b.update(); b.draw();
+                if(b.y < -50) bubbles.splice(i, 1);
+            });
+
+            // Draw Enemies
+            enemies.forEach((e, i) => {
+                e.update(); e.draw();
+                
+                // Cek Tabrakan
+                let dist = Math.hypot(player.x - e.x, player.y - e.y);
+                if(dist < player.r + e.r) {
+                    if(player.r >= e.r) {
+                        // Makan
+                        score += Math.floor(e.r);
+                        exp += 20;
+                        enemies.splice(i, 1);
+                        if(exp >= 100) {
+                            level++; exp = 0; player.r += 5;
+                            player.color = `hsl(${Math.random()*360}, 100%, 50%)`;
+                        }
+                    } else {
+                        // Dimakan (Game Over)
+                        gameOver();
+                    }
+                }
+                if(e.x < -100 || e.x > width + 100) enemies.splice(i, 1);
+            });
+
+            drawPlayer();
+            
+            document.getElementById('score').innerText = score;
+            document.getElementById('lvl').innerText = level;
+            document.getElementById('exp-bar').style.width = exp + '%';
+            
+            requestAnimationFrame(update);
+        }
+
+        function startGame() {
+            document.getElementById('menu').style.display = 'none';
+            init();
+            running = true;
+            spawn();
+            update();
+        }
+
+        function gameOver() {
+            running = false;
+            document.getElementById('game-over').style.display = 'flex';
+            document.getElementById('final-score').innerText = "Score: " + score;
+        }
+
         init();
-        running = true;
-        spawn();
-        update();
-      }
-
-      function gameOver() {
-        running = false;
-        document.getElementById("game-over").style.display = "flex";
-        document.getElementById("final-score").innerText = "Score: " + score;
-      }
-
-      init();
-      window.addEventListener("resize", init);
+        window.addEventListener('resize', init);
     </script>
-  </body>
+</body>
 </html>
