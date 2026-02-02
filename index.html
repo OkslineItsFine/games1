@@ -1,243 +1,509 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gulp! Evolution</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Gulp! Evolution Pro</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐟</text></svg>"
+    />
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #001a33; font-family: 'Segoe UI', sans-serif; }
-        canvas { display: block; cursor: crosshair; touch-action: none; }
-        
-        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
-        .stats { font-size: 24px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        
-        #menu, #game-over {
-            position: absolute; inset: 0; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; background: rgba(0,26,51,0.8);
-            color: white; z-index: 100; transition: 0.5s;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #00050a;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        user-select: none;
+      }
+      canvas {
+        display: block;
+        touch-action: none;
+        position: relative;
+        z-index: 2;
+      }
 
-        h1 { font-size: 80px; margin: 0; color: #00d2ff; text-shadow: 0 0 20px #00d2ff; letter-spacing: 5px; }
-        .btn {
-            padding: 15px 40px; font-size: 24px; background: #00d2ff; color: #001a33;
-            border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
-            margin-top: 20px; transition: 0.3s; box-shadow: 0 0 15px #00d2ff;
-        }
-        .btn:hover { transform: scale(1.1); box-shadow: 0 0 30px #00d2ff; }
-        
-        #exp-container { width: 250px; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; margin-top: 5px; }
-        #exp-bar { width: 0%; height: 100%; background: #00d2ff; border-radius: 5px; transition: 0.3s; }
+      /* Background Image Layer */
+      #bg-layer {
+        position: fixed;
+        inset: 0;
+        /* Ganti 'bckg1jpg.jpg' dengan nama file gambarmu jika berbeda */
+        background-image: url("bcg1.jpg");
+
+        /* Opsi agar gambar pas di layar: */
+        background-size: cover; /* Menutupi seluruh layar (rapi) */
+        /* Kalau mau gambar benar-benar utuh 100% meski gepeng, ganti jadi: background-size: 100% 100%; */
+
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 1;
+      }
+
+      /* UI Styling */
+      #ui {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        color: white;
+        pointer-events: none;
+        z-index: 10;
+        display: none;
+      }
+      .stats-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        opacity: 0.9;
+        text-shadow: 0 1px 3px black;
+      }
+      .stats-value {
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: #00d2ff;
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+      }
+
+      #exp-container {
+        width: 200px;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      #exp-bar {
+        width: 0%;
+        height: 100%;
+        background: #00d2ff;
+        box-shadow: 0 0 15px #00d2ff;
+        transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      /* Bento Card Menu */
+      #menu {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* Background menu sedikit gelap transparan biar tulisan terbaca, tapi gambar tetap kelihatan */
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 100;
+      }
+
+      .bento-card {
+        position: relative;
+        width: 340px;
+        height: 440px;
+        border-radius: 32px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        /* Kartu menu semi-transparan (Glassmorphism) */
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        transition: transform 0.3s;
+      }
+
+      .bento-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .bento-content {
+        height: 100%;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      #game-over {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        z-index: 110;
+        text-align: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .btn-arrow {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        transition: all 0.3s;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .bento-card:hover .btn-arrow {
+        background: white;
+        color: black;
+        transform: scale(1.1);
+      }
+
+      .btn-respawn {
+        padding: 15px 40px;
+        border-radius: 50px;
+        border: none;
+        cursor: pointer;
+        font-weight: 800;
+        margin-top: 20px;
+        background: white;
+        color: black;
+        text-transform: uppercase;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div id="bg-layer"></div>
 
     <div id="ui">
-        <div class="stats">SCORE: <span id="score">0</span></div>
-        <div class="stats" style="font-size: 16px;">EVOLUTION LEVEL: <span id="lvl">1</span></div>
-        <div id="exp-container"><div id="exp-bar"></div></div>
+      <div class="stats-label">Current Score</div>
+      <div id="score" class="stats-value">0</div>
+      <div class="stats-label">Evolution Level <span id="lvl">1</span></div>
+      <div id="exp-container"><div id="exp-bar"></div></div>
     </div>
 
     <div id="menu">
-        <h1>GULP!</h1>
-        <p>Makan ikan yang lebih kecil untuk tumbuh besar!</p>
-        <button class="btn" onclick="startGame()">START ADVENTURE</button>
+      <div class="bento-card" onclick="startGame()">
+        <div class="bento-content">
+          <div style="width: 100%; text-align: right">
+            <span
+              style="
+                font-size: 10px;
+                font-weight: 800;
+                opacity: 0.7;
+                letter-spacing: 2px;
+                color: #fff;
+              "
+            >
+            </span>
+          </div>
+          <div>
+            <h3
+              style="
+                font-size: 58px;
+                font-weight: 900;
+                font-style: italic;
+                letter-spacing: -3px;
+                color: white;
+                margin: 0;
+                line-height: 0.9;
+              "
+            >
+              GULP!
+            </h3>
+            <p
+              style="
+                margin-top: 15px;
+                font-size: 11px;
+                color: #00d2ff;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 4px;
+              "
+            >
+              Start Evolution
+            </p>
+          </div>
+          <div class="btn-arrow">→</div>
+        </div>
+      </div>
     </div>
 
-    <div id="game-over" style="display:none">
-        <h1 style="color: #ff4d4d; text-shadow: 0 0 20px #ff4d4d;">GAME OVER</h1>
-        <p id="final-score">Score: 0</p>
-        <button class="btn" onclick="location.reload()">TRY AGAIN</button>
+    <div id="game-over" style="display: none">
+      <h1
+        style="font-size: 80px; margin: 0; letter-spacing: -4px; color: #ff3366"
+      >
+        GAME OVER
+      </h1>
+      <p id="final-score" style="opacity: 0.8; margin-top: 10px">
+        Evolution halted
+      </p>
+      <button class="btn-respawn" onclick="location.reload()">RESPAWN</button>
     </div>
 
     <canvas id="game"></canvas>
 
     <script>
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        
-        let width, height, player, enemies, bubbles, particles, score, level, exp, running;
-        
-        function init() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            score = 0; level = 1; exp = 0; running = false;
-            enemies = []; bubbles = []; particles = [];
-            
-            player = {
-                x: width/2, y: height/2, r: 15, 
-                color: '#00d2ff', speed: 0.1,
-                targetX: width/2, targetY: height/2,
-                angle: 0
-            };
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      let width,
+        height,
+        player,
+        enemies,
+        bubbles,
+        particles,
+        score,
+        level,
+        exp,
+        running = false;
+      let shakeTime = 0;
+      let mouse = { x: 0, y: 0 };
+
+      const LEVEL_COLORS = [
+        "#00d2ff",
+        "#00ff88",
+        "#ff00ff",
+        "#ffcc00",
+        "#ff4444",
+        "#ffffff",
+      ];
+
+      class Particle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          this.color = color;
+          this.size = Math.random() * 4 + 2;
+          this.speedX = (Math.random() - 0.5) * 10;
+          this.speedY = (Math.random() - 0.5) * 10;
+          this.alpha = 1;
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          this.alpha -= 0.02;
+        }
+        draw() {
+          ctx.save();
+          ctx.globalAlpha = this.alpha;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function init() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        score = 0;
+        level = 1;
+        exp = 0;
+        enemies = [];
+        bubbles = [];
+        particles = [];
+        player = {
+          x: width / 2,
+          y: height / 2,
+          r: 18,
+          color: LEVEL_COLORS[0],
+          speed: 0.08,
+          angle: 0,
+        };
+        mouse.x = width / 2;
+        mouse.y = height / 2;
+      }
+
+      class Enemy {
+        constructor() {
+          this.r = Math.random() * (player.r * 2.2) + 8;
+          this.side = Math.random() > 0.5 ? "left" : "right";
+          this.x = this.side === "left" ? -150 : width + 150;
+          this.y = Math.random() * height;
+          this.speed = Math.random() * 1.5 + 1 + level * 0.15;
+          this.color = this.r > player.r ? "#ff3366" : "#00ffaa";
+          this.osc = Math.random() * 100;
+        }
+        update() {
+          this.x += this.side === "left" ? this.speed : -this.speed;
+          this.y += Math.sin(this.osc + Date.now() * 0.002) * 1.5;
+        }
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          if (this.side === "right") ctx.scale(-1, 1);
+          let eTailSwing = Math.sin(Date.now() * 0.01 + this.osc) * 8;
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, this.r, this.r * 0.7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(-this.r + 2, 0);
+          ctx.lineTo(-this.r - 12, -10 + eTailSwing);
+          ctx.lineTo(-this.r - 12, 10 + eTailSwing);
+          ctx.fill();
+          ctx.fillStyle = "white";
+          ctx.beginPath();
+          ctx.arc(this.r * 0.4, -this.r * 0.2, this.r * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "black";
+          ctx.beginPath();
+          ctx.arc(this.r * 0.45, -this.r * 0.2, this.r * 0.1, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function update() {
+        if (!running) return;
+
+        // Clear canvas agar background gambar terlihat
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.save();
+        if (shakeTime > 0) {
+          ctx.translate(Math.random() * 10 - 5, Math.random() * 10 - 5);
+          shakeTime--;
         }
 
-        // --- INPUT ---
-        window.addEventListener('mousemove', e => {
-            player.targetX = e.clientX;
-            player.targetY = e.clientY;
+        // Bubbles - dibuat agak transparan agar menyatu dengan background gambar
+        if (Math.random() < 0.04)
+          bubbles.push({
+            x: Math.random() * width,
+            y: height + 20,
+            r: Math.random() * 4,
+            s: Math.random() * 2 + 0.5,
+          });
+        bubbles.forEach((b, i) => {
+          b.y -= b.s;
+          ctx.strokeStyle = "rgba(255,255,255,0.4)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.stroke();
+          if (b.y < -20) bubbles.splice(i, 1);
         });
-        window.addEventListener('touchmove', e => {
-            player.targetX = e.touches[0].clientX;
-            player.targetY = e.touches[0].clientY;
+
+        particles.forEach((p, i) => {
+          p.update();
+          p.draw();
+          if (p.alpha <= 0) particles.splice(i, 1);
         });
 
-        class Enemy {
-            constructor() {
-                this.r = (Math.random() * 25) + (level * 2);
-                this.side = Math.random() > 0.5 ? 'left' : 'right';
-                this.x = this.side === 'left' ? -50 : width + 50;
-                this.y = Math.random() * height;
-                this.speed = (Math.random() * 2) + 1;
-                this.color = this.r > player.r ? '#ff4d4d' : '#4dff88';
+        // Player Logic
+        let dx = mouse.x - player.x;
+        let dy = mouse.y - player.y;
+        player.angle = Math.atan2(dy, dx);
+        player.x += dx * player.speed;
+        player.y += dy * player.speed;
+
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate(player.angle);
+        let pTailSwing = Math.sin(Date.now() * 0.015) * 10;
+        ctx.fillStyle = player.color;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = player.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, player.r, player.r * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-player.r + 5, 0);
+        ctx.lineTo(-player.r - 18, -12 + pTailSwing);
+        ctx.lineTo(-player.r - 18, 12 + pTailSwing);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(player.r * 0.4, -player.r * 0.2, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(player.r * 0.5, -player.r * 0.2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Enemies
+        if (Math.random() < 0.02 + level * 0.002) enemies.push(new Enemy());
+
+        enemies.forEach((e, i) => {
+          e.update();
+          e.draw();
+          let dist = Math.hypot(player.x - e.x, player.y - e.y);
+          if (dist < player.r + e.r - 5) {
+            if (player.r >= e.r) {
+              score += 10;
+              exp += 25;
+              shakeTime = 8;
+              for (let j = 0; j < 15; j++)
+                particles.push(new Particle(e.x, e.y, e.color));
+              enemies.splice(i, 1);
+              if (exp >= 100) {
+                level++;
+                exp = 0;
+                player.r += 4;
+                player.color = LEVEL_COLORS[level % LEVEL_COLORS.length];
+                document.getElementById("score").style.color = player.color;
+              }
+            } else {
+              gameOver();
             }
-            update() {
-                this.x += this.side === 'left' ? this.speed : -this.speed;
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                if(this.side === 'right') ctx.scale(-1, 1);
-                
-                // Body Ikan
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.ellipse(0, 0, this.r, this.r/1.5, 0, 0, Math.PI*2);
-                ctx.fill();
-                
-                // Ekor
-                ctx.beginPath();
-                ctx.moveTo(-this.r, 0);
-                ctx.lineTo(-this.r - 10, -10);
-                ctx.lineTo(-this.r - 10, 10);
-                ctx.closePath();
-                ctx.fill();
+          }
+          if (e.x < -200 || e.x > width + 200) enemies.splice(i, 1);
+        });
 
-                // Mata
-                ctx.fillStyle = 'white';
-                ctx.beginPath(); ctx.arc(this.r/2, -2, 3, 0, Math.PI*2); ctx.fill();
-                
-                ctx.restore();
-            }
-        }
+        ctx.restore();
 
-        class Bubble {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = height + 50;
-                this.r = Math.random() * 5;
-                this.speed = Math.random() * 2 + 1;
-            }
-            update() { this.y -= this.speed; }
-            draw() {
-                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.stroke();
-            }
-        }
+        document.getElementById("score").innerText = score;
+        document.getElementById("lvl").innerText = level;
+        document.getElementById("exp-bar").style.width = exp + "%";
+        document.getElementById("exp-bar").style.background = player.color;
+        requestAnimationFrame(update);
+      }
 
-        function spawn() {
-            if(!running) return;
-            if(Math.random() < 0.05) enemies.push(new Enemy());
-            if(Math.random() < 0.1) bubbles.push(new Bubble());
-            setTimeout(spawn, 100);
-        }
-
-        function drawPlayer() {
-            let dx = player.targetX - player.x;
-            let dy = player.targetY - player.y;
-            player.angle = Math.atan2(dy, dx);
-            player.x += dx * player.speed;
-            player.y += dy * player.speed;
-
-            ctx.save();
-            ctx.translate(player.x, player.y);
-            ctx.rotate(player.angle);
-            
-            // Cahaya Glow
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = player.color;
-            
-            // Badan Ikan Pemain
-            ctx.fillStyle = player.color;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, player.r, player.r/1.5, 0, 0, Math.PI*2);
-            ctx.fill();
-            
-            // Ekor
-            ctx.beginPath();
-            ctx.moveTo(-player.r, 0);
-            ctx.lineTo(-player.r - 15, -15);
-            ctx.lineTo(-player.r - 15, 15);
-            ctx.closePath();
-            ctx.fill();
-
-            // Mata
-            ctx.fillStyle = 'white';
-            ctx.beginPath(); ctx.arc(player.r/2, -5, 4, 0, Math.PI*2); ctx.fill();
-            
-            ctx.restore();
-        }
-
-        function update() {
-            if(!running) return;
-            ctx.fillStyle = 'linear-gradient(#001a33, #003366)';
-            ctx.clearRect(0, 0, width, height);
-            
-            // Draw Bubbles
-            bubbles.forEach((b, i) => {
-                b.update(); b.draw();
-                if(b.y < -50) bubbles.splice(i, 1);
-            });
-
-            // Draw Enemies
-            enemies.forEach((e, i) => {
-                e.update(); e.draw();
-                
-                // Cek Tabrakan
-                let dist = Math.hypot(player.x - e.x, player.y - e.y);
-                if(dist < player.r + e.r) {
-                    if(player.r >= e.r) {
-                        // Makan
-                        score += Math.floor(e.r);
-                        exp += 20;
-                        enemies.splice(i, 1);
-                        if(exp >= 100) {
-                            level++; exp = 0; player.r += 5;
-                            player.color = `hsl(${Math.random()*360}, 100%, 50%)`;
-                        }
-                    } else {
-                        // Dimakan (Game Over)
-                        gameOver();
-                    }
-                }
-                if(e.x < -100 || e.x > width + 100) enemies.splice(i, 1);
-            });
-
-            drawPlayer();
-            
-            document.getElementById('score').innerText = score;
-            document.getElementById('lvl').innerText = level;
-            document.getElementById('exp-bar').style.width = exp + '%';
-            
-            requestAnimationFrame(update);
-        }
-
-        function startGame() {
-            document.getElementById('menu').style.display = 'none';
-            init();
-            running = true;
-            spawn();
-            update();
-        }
-
-        function gameOver() {
-            running = false;
-            document.getElementById('game-over').style.display = 'flex';
-            document.getElementById('final-score').innerText = "Score: " + score;
-        }
-
+      function startGame() {
+        document.getElementById("menu").style.display = "none";
+        document.getElementById("ui").style.display = "block";
+        running = true;
         init();
-        window.addEventListener('resize', init);
-    </script>
-</body>
-</html>
+        update();
+      }
 
+      function gameOver() {
+        running = false;
+        document.getElementById("game-over").style.display = "flex";
+        document.getElementById("ui").style.display = "none";
+        document.getElementById("final-score").innerText =
+          `Evolved to Level ${level} • Score: ${score}`;
+      }
+
+      window.addEventListener("mousemove", (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+      window.addEventListener(
+        "touchmove",
+        (e) => {
+          if (e.touches.length > 0) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+          }
+        },
+        { passive: false },
+      );
+
+      window.addEventListener("resize", () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      init();
+    </script>
+  </body>
+</html>
