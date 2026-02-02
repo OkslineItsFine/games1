@@ -17,7 +17,6 @@
       }
       canvas {
         display: block;
-        cursor: crosshair;
         touch-action: none;
       }
 
@@ -27,6 +26,7 @@
         left: 20px;
         color: white;
         pointer-events: none;
+        z-index: 10;
       }
       .stats {
         font-size: 24px;
@@ -45,7 +45,6 @@
         background: rgba(0, 26, 51, 0.8);
         color: white;
         z-index: 100;
-        transition: 0.5s;
       }
 
       h1 {
@@ -68,10 +67,6 @@
         transition: 0.3s;
         box-shadow: 0 0 15px #00d2ff;
       }
-      .btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 0 30px #00d2ff;
-      }
 
       #exp-container {
         width: 250px;
@@ -87,6 +82,29 @@
         border-radius: 5px;
         transition: 0.3s;
       }
+
+      /* Style untuk Joystick */
+      #joystick-base {
+        position: absolute;
+        bottom: 50px;
+        left: 50px;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        display: none;
+        z-index: 50;
+      }
+      #joystick-stick {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 210, 255, 0.5);
+        border-radius: 50%;
+      }
     </style>
   </head>
   <body>
@@ -98,9 +116,13 @@
       <div id="exp-container"><div id="exp-bar"></div></div>
     </div>
 
+    <div id="joystick-base">
+      <div id="joystick-stick"></div>
+    </div>
+
     <div id="menu">
       <h1>GULP!</h1>
-      <p>Makan ikan yang lebih kecil untuk tumbuh besar!</p>
+      <p>Gunakan mouse atau Joystick di layar untuk bergerak!</p>
       <button class="btn" onclick="startGame()">START ADVENTURE</button>
     </div>
 
@@ -115,17 +137,16 @@
     <script>
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
+      const joyBase = document.getElementById("joystick-base");
+      const joyStick = document.getElementById("joystick-stick");
 
-      let width,
-        height,
-        player,
-        enemies,
-        bubbles,
-        particles,
-        score,
-        level,
-        exp,
-        running;
+      let width, height, player, enemies, bubbles, score, level, exp, running;
+      let isMobile = "ontouchstart" in window;
+
+      // Joystick Logic Variables
+      let stickActive = false;
+      let joyX = 0,
+        joyY = 0;
 
       function init() {
         width = canvas.width = window.innerWidth;
@@ -136,7 +157,6 @@
         running = false;
         enemies = [];
         bubbles = [];
-        particles = [];
 
         player = {
           x: width / 2,
@@ -147,17 +167,68 @@
           targetX: width / 2,
           targetY: height / 2,
           angle: 0,
+          vx: 0,
+          vy: 0, // velocity untuk joystick
         };
+
+        if (isMobile) joyBase.style.display = "block";
       }
 
-      // --- INPUT ---
+      // --- INPUT HANDLING ---
+
+      // Mouse Move (PC)
       window.addEventListener("mousemove", (e) => {
-        player.targetX = e.clientX;
-        player.targetY = e.clientY;
+        if (!stickActive) {
+          player.targetX = e.clientX;
+          player.targetY = e.clientY;
+        }
       });
+
+      // Touch Logic (Joystick)
+      window.addEventListener("touchstart", (e) => {
+        const touch = e.touches[0];
+        const rect = joyBase.getBoundingClientRect();
+        // Cek apakah menyentuh area joystick
+        let dist = Math.hypot(
+          touch.clientX - (rect.left + 50),
+          touch.clientY - (rect.top + 50),
+        );
+        if (dist < 80) stickActive = true;
+      });
+
       window.addEventListener("touchmove", (e) => {
-        player.targetX = e.touches[0].clientX;
-        player.targetY = e.touches[0].clientY;
+        if (!stickActive) return;
+        const touch = e.touches[0];
+        const rect = joyBase.getBoundingClientRect();
+        const centerX = rect.left + 50;
+        const centerY = rect.top + 50;
+
+        let angle = Math.atan2(
+          touch.clientY - centerY,
+          touch.clientX - centerX,
+        );
+        let dist = Math.min(
+          Math.hypot(touch.clientX - centerX, touch.clientY - centerY),
+          40,
+        );
+
+        joyX = Math.cos(angle) * dist;
+        joyY = Math.sin(angle) * dist;
+
+        joyStick.style.transform = `translate(${joyX}px, ${joyY}px)`;
+
+        // Set velocity berdasarkan tarikan joystick
+        player.vx = (joyX / 40) * 8;
+        player.vy = (joyY / 40) * 8;
+      });
+
+      window.addEventListener("touchend", () => {
+        stickActive = false;
+        joyX = 0;
+        joyY = 0;
+        joyStick.style.transform = `translate(0,0)`;
+        player.vx = 0;
+        player.vy = 0;
       });
 
       class Enemy {
@@ -176,27 +247,20 @@
           ctx.save();
           ctx.translate(this.x, this.y);
           if (this.side === "right") ctx.scale(-1, 1);
-
-          // Body Ikan
           ctx.fillStyle = this.color;
           ctx.beginPath();
           ctx.ellipse(0, 0, this.r, this.r / 1.5, 0, 0, Math.PI * 2);
           ctx.fill();
-
-          // Ekor
           ctx.beginPath();
           ctx.moveTo(-this.r, 0);
           ctx.lineTo(-this.r - 10, -10);
           ctx.lineTo(-this.r - 10, 10);
           ctx.closePath();
           ctx.fill();
-
-          // Mata
           ctx.fillStyle = "white";
           ctx.beginPath();
           ctx.arc(this.r / 2, -2, 3, 0, Math.PI * 2);
           ctx.fill();
-
           ctx.restore();
         }
       }
@@ -227,65 +291,64 @@
       }
 
       function drawPlayer() {
-        let dx = player.targetX - player.x;
-        let dy = player.targetY - player.y;
-        player.angle = Math.atan2(dy, dx);
-        player.x += dx * player.speed;
-        player.y += dy * player.speed;
+        if (stickActive) {
+          // Pergerakan via Joystick
+          player.x += player.vx;
+          player.y += player.vy;
+          if (player.vx !== 0 || player.vy !== 0) {
+            player.angle = Math.atan2(player.vy, player.vx);
+          }
+        } else {
+          // Pergerakan via Mouse Follow
+          let dx = player.targetX - player.x;
+          let dy = player.targetY - player.y;
+          player.angle = Math.atan2(dy, dx);
+          player.x += dx * player.speed;
+          player.y += dy * player.speed;
+        }
+
+        // Batasan Layar
+        player.x = Math.max(player.r, Math.min(width - player.r, player.x));
+        player.y = Math.max(player.r, Math.min(height - player.r, player.y));
 
         ctx.save();
         ctx.translate(player.x, player.y);
         ctx.rotate(player.angle);
-
-        // Cahaya Glow
         ctx.shadowBlur = 20;
         ctx.shadowColor = player.color;
-
-        // Badan Ikan Pemain
         ctx.fillStyle = player.color;
         ctx.beginPath();
         ctx.ellipse(0, 0, player.r, player.r / 1.5, 0, 0, Math.PI * 2);
         ctx.fill();
-
-        // Ekor
         ctx.beginPath();
         ctx.moveTo(-player.r, 0);
         ctx.lineTo(-player.r - 15, -15);
         ctx.lineTo(-player.r - 15, 15);
         ctx.closePath();
         ctx.fill();
-
-        // Mata
         ctx.fillStyle = "white";
         ctx.beginPath();
         ctx.arc(player.r / 2, -5, 4, 0, Math.PI * 2);
         ctx.fill();
-
         ctx.restore();
       }
 
       function update() {
         if (!running) return;
-        ctx.fillStyle = "linear-gradient(#001a33, #003366)";
         ctx.clearRect(0, 0, width, height);
 
-        // Draw Bubbles
         bubbles.forEach((b, i) => {
           b.update();
           b.draw();
           if (b.y < -50) bubbles.splice(i, 1);
         });
 
-        // Draw Enemies
         enemies.forEach((e, i) => {
           e.update();
           e.draw();
-
-          // Cek Tabrakan
           let dist = Math.hypot(player.x - e.x, player.y - e.y);
           if (dist < player.r + e.r) {
             if (player.r >= e.r) {
-              // Makan
               score += Math.floor(e.r);
               exp += 20;
               enemies.splice(i, 1);
@@ -296,7 +359,6 @@
                 player.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
               }
             } else {
-              // Dimakan (Game Over)
               gameOver();
             }
           }
@@ -304,11 +366,9 @@
         });
 
         drawPlayer();
-
         document.getElementById("score").innerText = score;
         document.getElementById("lvl").innerText = level;
         document.getElementById("exp-bar").style.width = exp + "%";
-
         requestAnimationFrame(update);
       }
 
